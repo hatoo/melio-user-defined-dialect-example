@@ -25,6 +25,8 @@ add_library(toyc-ch2
   mlir/Dialects.cpp
   )
 add_dependencies(toyc-ch2 ToyCh2OpsIncGen)
+
 include_directories(include/)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
 
 install (TARGETS toyc-ch2 DESTINATION .)

@@ -13,12 +13,6 @@ use mlir_sys::MlirDialectHandle;
 use operation::OperationBuilder;
 use r#type::RankedTensorType;
 
-/*
-pub mod raw {
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-}
-*/
-
 unsafe extern "C" {
     fn mlirGetDialectHandle__toy__() -> MlirDialectHandle;
 }

@@ -10,6 +10,4 @@ mlir-sys = "0.4.1"
 
 
 [build-dependencies]
-bindgen = "0.71.1"
-cc = "1.2.5"
 cmake = "0.1.52"

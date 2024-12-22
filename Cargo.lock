@@ -390,8 +390,6 @@ dependencies = [
 name = "mlir-test"
 version = "0.1.0"
 dependencies = [
- "bindgen 0.71.1",
- "cc",
  "cmake",
  "llvm-sys",
  "melior",

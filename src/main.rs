@@ -6,6 +6,7 @@ use melior::{
         r#type::FunctionType,
         *,
     },
+    pass::{conversion::create_to_llvm, transform::create_inliner, PassManager},
     utility::register_all_dialects,
     Context,
 };
@@ -29,7 +30,7 @@ fn main() {
     context.load_all_available_dialects();
 
     let location = Location::unknown(&context);
-    let module = Module::new(location);
+    let mut module = Module::new(location);
 
     let index_type = Type::index(&context);
 
@@ -63,7 +64,7 @@ fn main() {
     module.body().append_operation(func::func(
         &context,
         StringAttribute::new(&context, "main"),
-        TypeAttribute::new(FunctionType::new(&context, &[], &[]).into()),
+        TypeAttribute::new(FunctionType::new(&context, &[], &[index_type]).into()),
         {
             let block = Block::new(&[]);
             let v0 = block.append_operation(arith::constant(
@@ -72,13 +73,14 @@ fn main() {
                 location,
             ));
             let v0 = v0.result(0).unwrap();
-            block.append_operation(func::call(
+            let ans = block.append_operation(func::call(
                 &context,
                 FlatSymbolRefAttribute::new(&context, "add"),
                 &[v0.into(), v0.into()],
                 &[index_type],
                 location,
             ));
+            let ans = ans.result(0).unwrap();
 
             let double_type = Type::parse(&context, "f64").unwrap();
             let tensor = RankedTensorType::new(&[1], double_type, None);
@@ -98,18 +100,35 @@ fn main() {
 
             block.append_operation(toy_constant);
 
-            block.append_operation(func::r#return(&[], location));
+            block.append_operation(func::r#return(&[ans.into()], location));
             let region = Region::new();
             region.append_block(block);
             region
         },
-        &[(
-            Identifier::new(&context, "sym_visibility").into(),
-            StringAttribute::new(&context, "private").into(),
-        )],
+        &[],
         location,
     ));
 
     assert!(module.as_operation().verify());
+    dbg!(module.as_operation());
+
+    // register_all_passes();
+    let pass_manager = PassManager::new(&context);
+    pass_manager.add_pass(create_inliner());
+    // pass_manager.add_pass(create_canonicalizer());
+    // pass_manager.add_pass(create_cse());
+
+    pass_manager.run(&mut module).unwrap();
+
+    assert!(module.as_operation().verify());
+    println!("After some passes:");
+    dbg!(module.as_operation());
+
+    let pass_manager = PassManager::new(&context);
+    pass_manager.add_pass(create_to_llvm());
+    pass_manager.run(&mut module).unwrap();
+
+    assert!(module.as_operation().verify());
+    println!("to llvm:");
     dbg!(module.as_operation());
 }

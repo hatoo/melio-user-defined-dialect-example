@@ -13,11 +13,6 @@ use mlir_sys::MlirDialectHandle;
 use operation::OperationBuilder;
 use r#type::RankedTensorType;
 
-melior::dialect! {
-    name: "toy",
-    td_file: "mlir/Ops.td",
-}
-
 /*
 pub mod raw {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

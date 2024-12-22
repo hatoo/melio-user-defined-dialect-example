@@ -1,4 +1,5 @@
 use attribute::{DenseElementsAttribute, FlatSymbolRefAttribute, FloatAttribute, IntegerAttribute};
+use llvm_sys::core::{LLVMContextCreate, LLVMPrintModuleToString};
 use melior::{
     dialect::{arith, func, DialectHandle, DialectRegistry},
     ir::{
@@ -7,10 +8,10 @@ use melior::{
         *,
     },
     pass::{conversion::create_to_llvm, transform::create_inliner, PassManager},
-    utility::register_all_dialects,
+    utility::{register_all_dialects, register_all_llvm_translations},
     Context,
 };
-use mlir_sys::MlirDialectHandle;
+use mlir_sys::{mlirTranslateModuleToLLVMIR, MlirDialectHandle};
 use operation::OperationBuilder;
 use r#type::RankedTensorType;
 
@@ -131,4 +132,16 @@ fn main() {
     assert!(module.as_operation().verify());
     println!("to llvm:");
     dbg!(module.as_operation());
+
+    // TO LLVM IR
+    register_all_llvm_translations(&context);
+    let llvm_context = unsafe { LLVMContextCreate() };
+    let llvm_module =
+        unsafe { mlirTranslateModuleToLLVMIR(module.as_operation().to_raw(), llvm_context as _) };
+
+    let s = unsafe { LLVMPrintModuleToString(llvm_module as _) };
+
+    let s = unsafe { std::ffi::CStr::from_ptr(s) };
+    println!("LLVM IR:");
+    println!("{}", s.to_str().unwrap());
 }
